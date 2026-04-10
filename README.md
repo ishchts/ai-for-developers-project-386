@@ -1,3 +1,7 @@
+# website
+
+(https://ai-for-developers-project-386-xuzb.onrender.com/)[https://ai-for-developers-project-386-xuzb.onrender.com/]
+
 # Call Booking Service
 
 Приложение состоит из Fastify backend и React/Vite frontend. В development frontend работает через Vite dev server и проксирует запросы на backend по `/api`. В production backend раздает собранный frontend и API из одного процесса и одного Docker-контейнера.
