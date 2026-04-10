@@ -5,7 +5,7 @@
     "start": "node --import tsx backend/server.ts",
     "test": "TZ=UTC node --import tsx --test test/backend.test.ts",
     "typecheck": "tsc -p tsconfig.backend.json --noEmit",
-    "build:backend": "tsc -p tsconfig.backend.json",
+    "build:backend": "tsc -p tsconfig.build.json",
     "typespec:compile": "tsp compile ./typespec/main.tsp --emit @typespec/openapi3",
     "prism:mock": "prism mock tsp-output/@typespec/openapi3/openapi.yaml",
     "frontend:dev": "npm run dev --prefix frontend",
@@ -16,6 +16,7 @@
     "test:e2e:headed": "TZ=UTC playwright test --headed"
   },
   "dependencies": {
+    "@fastify/static": "^9.1.0",
     "@typespec/compiler": "^1.10.0",
     "@typespec/http": "^1.10.0",
     "@typespec/openapi3": "^1.10.0",

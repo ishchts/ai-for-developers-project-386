@@ -1,4 +1,4 @@
-import { buildApp } from "./app";
+const { buildApp } = require("./app") as typeof import("./app");
 
 async function start(): Promise<void> {
   const app = buildApp();
@@ -12,6 +12,7 @@ async function start(): Promise<void> {
     });
   } catch (error) {
     app.log.error(error);
+    console.error(error);
     process.exit(1);
   }
 }

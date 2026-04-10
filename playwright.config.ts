@@ -19,7 +19,7 @@ export default defineConfig({
   webServer: [
     {
       command: `HOST=${backendHost} PORT=${backendPort} TZ=UTC npm start`,
-      url: `http://${backendHost}:${backendPort}/event-types`,
+      url: `http://${backendHost}:${backendPort}/healthz`,
       reuseExistingServer: !process.env.CI,
       stdout: "pipe",
       stderr: "pipe",

@@ -50,4 +50,5 @@ export type BuildAppOptions = {
   getNow?: () => Date;
   createId?: () => string;
   logger?: boolean;
+  staticRoot?: string | null;
 };

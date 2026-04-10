@@ -36,7 +36,7 @@ export async function createEventType(
   overrides: EventTypeSeed = {},
 ): Promise<CreatedEventType> {
   const suffix = uniqueSuffix();
-  const response = await request.post(`${backendBaseUrl}/owner/event-types`, {
+  const response = await request.post(`${backendBaseUrl}/api/owner/event-types`, {
     data: {
       title: overrides.title ?? `Discovery Call ${suffix}`,
       description: overrides.description ?? `Introductory booking flow ${suffix}`,

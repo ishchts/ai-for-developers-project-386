@@ -1,8 +1,9 @@
 node_modules
 frontend/node_modules
+dist
 frontend/dist
-*.tsbuildinfo
+.git
+.playwright
 playwright-report
 test-results
-.DS_Store
-dist/
+npm-debug.log*

@@ -1,12 +1,36 @@
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "../backend/app";
 import type { CreateEventTypeRequest } from "../backend/types";
 
-test("POST /owner/event-types creates an event type", async (t) => {
+test("GET /healthz returns 200", async (t) => {
+  const app = buildApp({
+    staticRoot: null,
+  });
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  const response = await app.inject({
+    method: "GET",
+    url: "/healthz",
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.json(), {
+    status: "ok",
+  });
+});
+
+test("POST /api/owner/event-types creates an event type", async (t) => {
   const app = buildApp({
     createId: () => "event-1",
+    staticRoot: null,
   });
 
   t.after(async () => {
@@ -15,7 +39,7 @@ test("POST /owner/event-types creates an event type", async (t) => {
 
   const response = await app.inject({
     method: "POST",
-    url: "/owner/event-types",
+    url: "/api/owner/event-types",
     payload: {
       title: "Intro call",
       description: "Short introduction",
@@ -32,8 +56,10 @@ test("POST /owner/event-types creates an event type", async (t) => {
   });
 });
 
-test("POST /owner/event-types returns contract-shaped 400 on invalid input", async (t) => {
-  const app = buildApp();
+test("POST /api/owner/event-types returns contract-shaped 400 on invalid input", async (t) => {
+  const app = buildApp({
+    staticRoot: null,
+  });
 
   t.after(async () => {
     await app.close();
@@ -41,7 +67,7 @@ test("POST /owner/event-types returns contract-shaped 400 on invalid input", asy
 
   const response = await app.inject({
     method: "POST",
-    url: "/owner/event-types",
+    url: "/api/owner/event-types",
     payload: {
       title: "",
       description: "Invalid",
@@ -54,28 +80,25 @@ test("POST /owner/event-types returns contract-shaped 400 on invalid input", asy
   assert.equal(response.json().code, "BAD_REQUEST");
 });
 
-test("GET /event-types returns created event types", async (t) => {
+test("GET /api/event-types returns created event types", async (t) => {
   const app = buildApp({
     createId: () => "event-1",
+    staticRoot: null,
   });
 
   t.after(async () => {
     await app.close();
   });
 
-  await app.inject({
-    method: "POST",
-    url: "/owner/event-types",
-    payload: {
-      title: "Consultation",
-      description: "Detailed session",
-      durationMinutes: 60,
-    },
+  await createEventType(app, {
+    title: "Consultation",
+    description: "Detailed session",
+    durationMinutes: 60,
   });
 
   const response = await app.inject({
     method: "GET",
-    url: "/event-types",
+    url: "/api/event-types",
   });
 
   assert.equal(response.statusCode, 200);
@@ -89,8 +112,10 @@ test("GET /event-types returns created event types", async (t) => {
   ]);
 });
 
-test("GET /event-types/:eventTypeId/slots returns 404 for unknown event type", async (t) => {
-  const app = buildApp();
+test("GET /api/event-types/:eventTypeId/slots returns 404 for unknown event type", async (t) => {
+  const app = buildApp({
+    staticRoot: null,
+  });
 
   t.after(async () => {
     await app.close();
@@ -98,7 +123,7 @@ test("GET /event-types/:eventTypeId/slots returns 404 for unknown event type", a
 
   const response = await app.inject({
     method: "GET",
-    url: "/event-types/missing/slots?date=2026-04-10",
+    url: "/api/event-types/missing/slots?date=2026-04-10",
   });
 
   assert.equal(response.statusCode, 404);
@@ -108,9 +133,10 @@ test("GET /event-types/:eventTypeId/slots returns 404 for unknown event type", a
   });
 });
 
-test("GET /event-types/:eventTypeId/slots returns 400 for invalid date", async (t) => {
+test("GET /api/event-types/:eventTypeId/slots returns 400 for invalid date", async (t) => {
   const app = buildApp({
     createId: () => "event-1",
+    staticRoot: null,
   });
 
   t.after(async () => {
@@ -125,17 +151,18 @@ test("GET /event-types/:eventTypeId/slots returns 400 for invalid date", async (
 
   const response = await app.inject({
     method: "GET",
-    url: "/event-types/event-1/slots?date=2026-02-31",
+    url: "/api/event-types/event-1/slots?date=2026-02-31",
   });
 
   assert.equal(response.statusCode, 400);
   assert.equal(response.json().code, "BAD_REQUEST");
 });
 
-test("GET /event-types/:eventTypeId/slots returns deterministic slots and availability", async (t) => {
+test("GET /api/event-types/:eventTypeId/slots returns deterministic slots and availability", async (t) => {
   let idCounter = 0;
   const app = buildApp({
     createId: () => `id-${++idCounter}`,
+    staticRoot: null,
   });
 
   t.after(async () => {
@@ -150,7 +177,7 @@ test("GET /event-types/:eventTypeId/slots returns deterministic slots and availa
 
   await app.inject({
     method: "POST",
-    url: "/bookings",
+    url: "/api/bookings",
     payload: {
       eventTypeId: "id-1",
       guestName: "Ada",
@@ -161,7 +188,7 @@ test("GET /event-types/:eventTypeId/slots returns deterministic slots and availa
 
   const response = await app.inject({
     method: "GET",
-    url: "/event-types/id-1/slots?date=2026-04-10",
+    url: "/api/event-types/id-1/slots?date=2026-04-10",
   });
 
   assert.equal(response.statusCode, 200);
@@ -184,9 +211,10 @@ test("GET /event-types/:eventTypeId/slots returns deterministic slots and availa
   ]);
 });
 
-test("POST /bookings validates required data and slot membership", async (t) => {
+test("POST /api/bookings validates required data and slot membership", async (t) => {
   const app = buildApp({
     createId: () => "event-1",
+    staticRoot: null,
   });
 
   t.after(async () => {
@@ -201,7 +229,7 @@ test("POST /bookings validates required data and slot membership", async (t) => 
 
   const invalidDateTime = await app.inject({
     method: "POST",
-    url: "/bookings",
+    url: "/api/bookings",
     payload: {
       eventTypeId: "event-1",
       guestName: "Ada",
@@ -215,7 +243,7 @@ test("POST /bookings validates required data and slot membership", async (t) => 
 
   const invalidSlot = await app.inject({
     method: "POST",
-    url: "/bookings",
+    url: "/api/bookings",
     payload: {
       eventTypeId: "event-1",
       guestName: "Ada",
@@ -228,8 +256,10 @@ test("POST /bookings validates required data and slot membership", async (t) => 
   assert.equal(invalidSlot.json().code, "BAD_REQUEST");
 });
 
-test("POST /bookings returns 404 for unknown event type", async (t) => {
-  const app = buildApp();
+test("POST /api/bookings returns 404 for unknown event type", async (t) => {
+  const app = buildApp({
+    staticRoot: null,
+  });
 
   t.after(async () => {
     await app.close();
@@ -237,7 +267,7 @@ test("POST /bookings returns 404 for unknown event type", async (t) => {
 
   const response = await app.inject({
     method: "POST",
-    url: "/bookings",
+    url: "/api/bookings",
     payload: {
       eventTypeId: "missing",
       guestName: "Ada",
@@ -253,10 +283,11 @@ test("POST /bookings returns 404 for unknown event type", async (t) => {
   });
 });
 
-test("POST /bookings returns 409 for the same slot across event types", async (t) => {
+test("POST /api/bookings returns 409 for the same slot across event types", async (t) => {
   let idCounter = 0;
   const app = buildApp({
     createId: () => `id-${++idCounter}`,
+    staticRoot: null,
   });
 
   t.after(async () => {
@@ -277,7 +308,7 @@ test("POST /bookings returns 409 for the same slot across event types", async (t
 
   const first = await app.inject({
     method: "POST",
-    url: "/bookings",
+    url: "/api/bookings",
     payload: {
       eventTypeId: "id-1",
       guestName: "Ada",
@@ -288,7 +319,7 @@ test("POST /bookings returns 409 for the same slot across event types", async (t
 
   const second = await app.inject({
     method: "POST",
-    url: "/bookings",
+    url: "/api/bookings",
     payload: {
       eventTypeId: "id-2",
       guestName: "Grace",
@@ -305,11 +336,12 @@ test("POST /bookings returns 409 for the same slot across event types", async (t
   });
 });
 
-test("GET /owner/bookings returns only future bookings sorted by start time", async (t) => {
+test("GET /api/owner/bookings returns only future bookings sorted by start time", async (t) => {
   let idCounter = 0;
   const app = buildApp({
     createId: () => `id-${++idCounter}`,
     getNow: () => new Date("2026-04-10T10:30:00.000Z"),
+    staticRoot: null,
   });
 
   t.after(async () => {
@@ -324,7 +356,7 @@ test("GET /owner/bookings returns only future bookings sorted by start time", as
 
   await app.inject({
     method: "POST",
-    url: "/bookings",
+    url: "/api/bookings",
     payload: {
       eventTypeId: "id-1",
       guestName: "Past",
@@ -335,7 +367,7 @@ test("GET /owner/bookings returns only future bookings sorted by start time", as
 
   await app.inject({
     method: "POST",
-    url: "/bookings",
+    url: "/api/bookings",
     payload: {
       eventTypeId: "id-1",
       guestName: "Future A",
@@ -346,7 +378,7 @@ test("GET /owner/bookings returns only future bookings sorted by start time", as
 
   await app.inject({
     method: "POST",
-    url: "/bookings",
+    url: "/api/bookings",
     payload: {
       eventTypeId: "id-1",
       guestName: "Future B",
@@ -357,7 +389,7 @@ test("GET /owner/bookings returns only future bookings sorted by start time", as
 
   const response = await app.inject({
     method: "GET",
-    url: "/owner/bookings",
+    url: "/api/owner/bookings",
   });
 
   assert.equal(response.statusCode, 200);
@@ -371,13 +403,81 @@ test("GET /owner/bookings returns only future bookings sorted by start time", as
   );
 });
 
+test("GET /api/does-not-exist returns JSON 404 instead of SPA HTML", async (t) => {
+  const app = buildApp();
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  const response = await app.inject({
+    method: "GET",
+    url: "/api/does-not-exist",
+  });
+
+  assert.equal(response.statusCode, 404);
+  assert.equal(response.headers["content-type"], "application/json; charset=utf-8");
+  assert.deepEqual(response.json(), {
+    code: "NOT_FOUND",
+    message: "Route GET /api/does-not-exist not found.",
+  });
+});
+
+test("GET /event-types no longer exposes a legacy root API route", async (t) => {
+  const app = buildApp();
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  const response = await app.inject({
+    method: "GET",
+    url: "/event-types",
+  });
+
+  assert.equal(response.statusCode, 404);
+  assert.equal(response.headers["content-type"], "application/json; charset=utf-8");
+  assert.deepEqual(response.json(), {
+    code: "NOT_FOUND",
+    message: "Route GET /event-types not found.",
+  });
+});
+
+test("GET /admin returns SPA index without affecting API routing", async (t) => {
+  const staticRoot = await fs.mkdtemp(path.join(os.tmpdir(), "call-booking-static-"));
+
+  await fs.writeFile(
+    path.join(staticRoot, "index.html"),
+    "<!doctype html><html><body><div id=\"root\">spa</div></body></html>",
+    "utf8",
+  );
+
+  const app = buildApp({
+    staticRoot,
+  });
+
+  t.after(async () => {
+    await app.close();
+    await fs.rm(staticRoot, { recursive: true, force: true });
+  });
+
+  const response = await app.inject({
+    method: "GET",
+    url: "/admin",
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.match(response.headers["content-type"] ?? "", /^text\/html/);
+  assert.match(response.body, /<div id="root">spa<\/div>/);
+});
+
 async function createEventType(
   app: FastifyInstance,
   payload: CreateEventTypeRequest,
 ): Promise<void> {
   const response = await app.inject({
     method: "POST",
-    url: "/owner/event-types",
+    url: "/api/owner/event-types",
     payload,
   });
 
