@@ -1,19 +1,33 @@
 import { FormEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
+import { BookingDetailsForm } from "../components/booking/BookingDetailsForm";
+import { BookingStepHeader } from "../components/booking/BookingStepHeader";
+import { BookingSuccessCard } from "../components/booking/BookingSuccessCard";
+import { BookingSummary } from "../components/booking/BookingSummary";
+import { DateSelector } from "../components/booking/DateSelector";
+import { EmptyState } from "../components/booking/EmptyState";
+import { SlotList } from "../components/booking/SlotList";
+import { Button } from "../components/common/Button";
+import { Card } from "../components/common/Card";
+import { InlineMessage } from "../components/common/InlineMessage";
+import { SectionIntro } from "../components/common/SectionIntro";
+import { bookingSteps, type BookingStep } from "../features/booking/booking-flow";
 import { api } from "../lib/api";
-import { formatDateTime, toDateInputValue } from "../lib/datetime";
+import { toDateInputValue } from "../lib/datetime";
 import { useAsyncData } from "../hooks/useAsyncData";
-import { StatusBlock } from "../ui/StatusBlock";
-import { ApiError, type Booking } from "../types/api";
+import { ApiError, type Booking, type Slot } from "../types/api";
 
 const today = toDateInputValue(new Date());
 
 export function BookingPage() {
+  const { t } = useTranslation();
   const { eventTypeId } = useParams();
   const [date, setDate] = useState(today);
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [selectedStartTime, setSelectedStartTime] = useState("");
+  const [step, setStep] = useState<BookingStep>(bookingSteps.selectSlot);
   const [submitState, setSubmitState] = useState<{
     isSubmitting: boolean;
     error: string | null;
@@ -49,6 +63,37 @@ export function BookingPage() {
 
   const currentEventType =
     eventTypes?.find((eventType) => eventType.id === eventTypeId) ?? null;
+  const activeStep = submitState.booking ? bookingSteps.success : step;
+
+  function resetTransientState() {
+    setSubmitState((current) => ({
+      ...current,
+      conflict: null,
+      error: null,
+      booking: null,
+    }));
+  }
+
+  function handleDateChange(value: string) {
+    setDate(value);
+    setSelectedStartTime("");
+    setStep(bookingSteps.selectSlot);
+    resetTransientState();
+  }
+
+  function handleSelectSlot(slot: Slot) {
+    setSelectedStartTime(slot.startTime);
+    setStep(bookingSteps.confirm);
+    resetTransientState();
+  }
+
+  function handleBackToTime() {
+    setStep(bookingSteps.selectSlot);
+    setSubmitState((current) => ({
+      ...current,
+      error: null,
+    }));
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,7 +101,7 @@ export function BookingPage() {
     if (!eventTypeId || !selectedStartTime) {
       setSubmitState((current) => ({
         ...current,
-        error: "Choose a slot before submitting.",
+        error: t("booking.formRequiredMessage"),
       }));
       return;
     }
@@ -87,15 +132,16 @@ export function BookingPage() {
         setSubmitState({
           isSubmitting: false,
           error: null,
-          conflict: error.payload?.message ?? "This slot is already taken.",
+          conflict: error.payload?.message ?? t("booking.conflictMessage"),
           booking: null,
         });
+        setStep(bookingSteps.selectSlot);
         return;
       }
 
       setSubmitState({
         isSubmitting: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : t("states.unknownError"),
         conflict: null,
         booking: null,
       });
@@ -105,170 +151,112 @@ export function BookingPage() {
   return (
     <section className="stack">
       <div className="page-head">
-        <div>
-          <p className="eyebrow">Booking</p>
-          <h1>{currentEventType?.title ?? "Select a slot"}</h1>
-          <p className="hero-copy">
-            {currentEventType?.description ??
-              "The selected event type could not be resolved yet."}
-          </p>
-        </div>
-        <Link className="button secondary" to="/">
-          Back
+        <SectionIntro
+          eyebrow={t("booking.pageEyebrow")}
+          subtitle={currentEventType?.description ?? t("booking.summaryDescription")}
+          title={currentEventType?.title ?? t("booking.eventTypeFallbackTitle")}
+        />
+        <Link className="button button-secondary" to="/">
+          {t("booking.backToEvents")}
         </Link>
       </div>
 
       {eventTypesError ? (
-        <StatusBlock
-          tone="error"
-          title="Failed to load event type details"
+        <InlineMessage
           message={eventTypesError.message}
+          title={t("booking.eventTypeErrorTitle")}
+          tone="error"
         />
       ) : null}
 
-      <div className="booking-layout">
-        <section className="panel stack">
-          <label className="field">
-            <span>Date</span>
-            <input
-              min={today}
-              onChange={(event) => {
-                setDate(event.target.value);
-                setSelectedStartTime("");
-                setSubmitState((current) => ({
-                  ...current,
-                  conflict: null,
-                  error: null,
-                  booking: null,
-                }));
-              }}
-              type="date"
-              value={date}
-            />
-          </label>
+      <BookingStepHeader currentStep={activeStep} />
 
-          {isSlotsLoading ? (
-            <StatusBlock
-              title="Loading slots"
-              message="Fetching current slot availability."
-            />
-          ) : null}
+      {submitState.booking ? (
+        <BookingSuccessCard
+          date={date}
+          eventType={currentEventType}
+          startTime={submitState.booking.startTime}
+        />
+      ) : (
+        <div className="booking-layout">
+          <BookingSummary
+            className="booking-sidebar"
+            date={date}
+            eventType={currentEventType}
+            selectedStartTime={selectedStartTime}
+          />
 
-          {slotsError ? (
-            <div className="stack">
-              <StatusBlock
-                tone="error"
-                title="Failed to load slots"
-                message={slotsError.message}
+          <div className="booking-main">
+            {activeStep === bookingSteps.selectSlot ? (
+              <Card className="booking-panel">
+                <div className="stack compact">
+                  <h2>{t("booking.pickDateTitle")}</h2>
+                  <p>{t("booking.pickDateSubtitle")}</p>
+                </div>
+
+                <DateSelector min={today} onChange={handleDateChange} value={date} />
+
+                {isSlotsLoading ? (
+                  <InlineMessage
+                    message={t("booking.loadingSlotsMessage")}
+                    title={t("booking.loadingSlotsTitle")}
+                  />
+                ) : null}
+
+                {slotsError ? (
+                  <div className="stack">
+                    <InlineMessage
+                      message={slotsError.message}
+                      title={t("booking.slotsErrorTitle")}
+                      tone="error"
+                    />
+                    <Button onClick={() => void reloadSlots()} variant="secondary">
+                      {t("common.retry")}
+                    </Button>
+                  </div>
+                ) : null}
+
+                {submitState.conflict ? (
+                  <InlineMessage
+                    message={submitState.conflict}
+                    title={t("booking.conflictTitle")}
+                    tone="warning"
+                  />
+                ) : null}
+
+                {slots ? (
+                  <SlotList
+                    onSelect={handleSelectSlot}
+                    selectedStartTime={selectedStartTime}
+                    slots={slots}
+                  />
+                ) : null}
+              </Card>
+            ) : null}
+
+            {activeStep === bookingSteps.confirm ? (
+              <BookingDetailsForm
+                conflict={submitState.conflict}
+                error={submitState.error}
+                guestEmail={guestEmail}
+                guestName={guestName}
+                isSubmitting={submitState.isSubmitting}
+                onBack={handleBackToTime}
+                onEmailChange={setGuestEmail}
+                onNameChange={setGuestName}
+                onSubmit={handleSubmit}
               />
-              <button
-                className="button secondary"
-                onClick={() => void reloadSlots()}
-                type="button"
-              >
-                Retry
-              </button>
-            </div>
-          ) : null}
+            ) : null}
 
-          <div className="slot-list">
-            {slots?.length ? (
-              slots
-                .filter((slot) => slot.available)
-                .map((slot) => (
-                  <button
-                    className={
-                      selectedStartTime === slot.startTime
-                        ? "slot-button selected"
-                        : "slot-button"
-                    }
-                    key={slot.startTime}
-                    onClick={() => {
-                      setSelectedStartTime(slot.startTime);
-                      setSubmitState((current) => ({
-                        ...current,
-                        conflict: null,
-                        error: null,
-                        booking: null,
-                      }));
-                    }}
-                    type="button"
-                  >
-                    {formatDateTime(slot.startTime)}
-                  </button>
-                ))
-            ) : (
-              <StatusBlock
-                title="No slots found"
-                message="The API did not return any available slot for this date."
+            {!selectedStartTime && activeStep === bookingSteps.selectSlot && !isSlotsLoading && !slotsError ? (
+              <EmptyState
+                message={t("booking.emptySelectionHint")}
+                title={t("booking.selectedSlot")}
               />
-            )}
+            ) : null}
           </div>
-        </section>
-
-        <form className="panel stack" onSubmit={handleSubmit}>
-          <h2>Guest details</h2>
-          <label className="field">
-            <span>Name</span>
-            <input
-              onChange={(event) => setGuestName(event.target.value)}
-              required
-              type="text"
-              value={guestName}
-            />
-          </label>
-          <label className="field">
-            <span>Email</span>
-            <input
-              onChange={(event) => setGuestEmail(event.target.value)}
-              required
-              type="email"
-              value={guestEmail}
-            />
-          </label>
-          <div className="stack compact">
-            <p className="meta">Selected slot</p>
-            <strong>
-              {selectedStartTime ? formatDateTime(selectedStartTime) : "Nothing selected"}
-            </strong>
-          </div>
-
-          {submitState.isSubmitting ? (
-            <StatusBlock
-              title="Creating booking"
-              message="Submitting the selected slot to the API."
-            />
-          ) : null}
-
-          {submitState.conflict ? (
-            <StatusBlock
-              tone="warning"
-              title="Slot conflict"
-              message={submitState.conflict}
-            />
-          ) : null}
-
-          {submitState.error ? (
-            <StatusBlock
-              tone="error"
-              title="Booking failed"
-              message={submitState.error}
-            />
-          ) : null}
-
-          {submitState.booking ? (
-            <StatusBlock
-              tone="success"
-              title="Booking created"
-              message={`Confirmed for ${formatDateTime(submitState.booking.startTime)}.`}
-            />
-          ) : null}
-
-          <button className="button" disabled={submitState.isSubmitting} type="submit">
-            {submitState.isSubmitting ? "Saving..." : "Book now"}
-          </button>
-        </form>
-      </div>
+        </div>
+      )}
     </section>
   );
 }

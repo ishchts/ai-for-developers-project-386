@@ -19,22 +19,21 @@ test("happy path creates a booking and shows it in admin", async ({ page, reques
   await page.goto("/");
   await expect(page.getByRole("heading", { name: eventType.title })).toBeVisible();
   await page
-    .locator("article")
+    .getByTestId("event-card")
     .filter({ hasText: eventType.title })
-    .getByRole("link", { name: "Continue" })
+    .getByTestId("event-card-cta")
     .click();
 
-  await page.getByLabel("Date").fill(bookingDate);
+  await page.getByTestId("booking-date-input").fill(bookingDate);
   const selectedSlotLabel = await selectFirstAvailableSlot(page);
   await fillBookingForm(page, { guestName, guestEmail });
-  await page.getByRole("button", { name: "Book now" }).click();
+  await page.getByTestId("booking-confirm-button").click();
 
-  await expect(page.getByRole("heading", { name: "Booking created" })).toBeVisible();
-  await expect(page.getByText("Confirmed for", { exact: false })).toBeVisible();
+  await expect(page.getByTestId("booking-success-card")).toBeVisible();
 
   await page.goto("/admin");
-  await expect(page.getByRole("heading", { name: "Future bookings", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Refresh" }).click();
+  await expect(page.getByRole("heading", { name: "Будущие бронирования", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Обновить" }).click();
 
   const bookingRow = page.locator(".booking-row").filter({ hasText: guestEmail });
   await expect(bookingRow).toContainText(guestName);
@@ -75,11 +74,11 @@ test("conflict path shows slot conflict for a stale second page", async ({
     guestEmail: secondGuestEmail,
   });
 
-  await firstPage.getByRole("button", { name: "Book now" }).click();
-  await expect(firstPage.getByRole("heading", { name: "Booking created" })).toBeVisible();
+  await firstPage.getByTestId("booking-confirm-button").click();
+  await expect(firstPage.getByTestId("booking-success-card")).toBeVisible();
 
-  await secondPage.getByRole("button", { name: "Book now" }).click();
-  await expect(secondPage.getByRole("heading", { name: "Slot conflict" })).toBeVisible();
+  await secondPage.getByTestId("booking-confirm-button").click();
+  await expect(secondPage.getByText("Этот слот уже занят")).toBeVisible();
   await expect(secondPage.getByText("This time slot is already booked.")).toBeVisible();
 
   await firstContext.close();

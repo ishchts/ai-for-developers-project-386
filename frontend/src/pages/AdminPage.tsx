@@ -1,10 +1,15 @@
 import { FormEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Button } from "../components/common/Button";
+import { Card } from "../components/common/Card";
+import { InlineMessage } from "../components/common/InlineMessage";
+import { SectionIntro } from "../components/common/SectionIntro";
 import { api } from "../lib/api";
 import { formatDateTime } from "../lib/datetime";
 import { useAsyncData } from "../hooks/useAsyncData";
-import { StatusBlock } from "../ui/StatusBlock";
 
 export function AdminPage() {
+  const { i18n, t } = useTranslation();
   const {
     data: eventTypes,
     error: eventTypesError,
@@ -49,13 +54,13 @@ export function AdminPage() {
         durationMinutes: "30",
         isSubmitting: false,
         error: "",
-        success: `${created.title} created successfully.`,
+        success: created.title,
       });
     } catch (error) {
       setFormState((current) => ({
         ...current,
         isSubmitting: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : t("states.unknownError"),
         success: "",
       }));
     }
@@ -67,18 +72,13 @@ export function AdminPage() {
 
   return (
     <section className="stack">
-      <div className="page-head">
-        <div>
-          <p className="eyebrow">Admin</p>
-          <h1>Manage event types and review future bookings.</h1>
-        </div>
-      </div>
+      <SectionIntro eyebrow={t("admin.eyebrow")} title={t("admin.title")} />
 
       <div className="admin-layout">
-        <form className="panel stack" onSubmit={handleSubmit}>
-          <h2>Create event type</h2>
+        <Card as="form" className="stack" onSubmit={handleSubmit}>
+          <h2>{t("admin.createTitle")}</h2>
           <label className="field">
-            <span>Title</span>
+            <span>{t("admin.titleLabel")}</span>
             <input
               onChange={(event) =>
                 setFormState((current) => ({ ...current, title: event.target.value }))
@@ -89,7 +89,7 @@ export function AdminPage() {
             />
           </label>
           <label className="field">
-            <span>Description</span>
+            <span>{t("admin.descriptionLabel")}</span>
             <textarea
               onChange={(event) =>
                 setFormState((current) => ({
@@ -102,7 +102,7 @@ export function AdminPage() {
             />
           </label>
           <label className="field">
-            <span>Duration (minutes)</span>
+            <span>{t("admin.durationLabel")}</span>
             <input
               min="1"
               onChange={(event) =>
@@ -118,61 +118,53 @@ export function AdminPage() {
           </label>
 
           {formState.error ? (
-            <StatusBlock
-              tone="error"
-              title="Could not create event type"
-              message={formState.error}
-            />
+            <InlineMessage message={formState.error} title={t("admin.createErrorTitle")} tone="error" />
           ) : null}
 
           {formState.success ? (
-            <StatusBlock
+            <InlineMessage
+              message={t("admin.createSuccessMessage", { title: formState.success })}
+              title={t("admin.createSuccessTitle")}
               tone="success"
-              title="Event type created"
-              message={formState.success}
             />
           ) : null}
 
-          <button className="button" disabled={formState.isSubmitting} type="submit">
-            {formState.isSubmitting ? "Saving..." : "Create"}
-          </button>
-        </form>
+          <Button disabled={formState.isSubmitting} type="submit">
+            {formState.isSubmitting ? t("admin.creating") : t("admin.createCta")}
+          </Button>
+        </Card>
 
-        <section className="panel stack">
+        <Card as="section" className="stack">
           <div className="section-head">
-            <h2>Future bookings</h2>
-            <button
-              className="button secondary"
+            <h2>{t("admin.bookingsTitle")}</h2>
+            <Button
               onClick={() => {
                 void reloadBookings();
                 void reloadEventTypes();
               }}
-              type="button"
+              variant="secondary"
             >
-              Refresh
-            </button>
+              {t("common.refresh")}
+            </Button>
           </div>
 
           {isBookingsLoading || isEventTypesLoading ? (
-            <StatusBlock
-              title="Loading bookings"
-              message="Fetching future bookings and event type details from the owner API."
-            />
+            <InlineMessage message={t("admin.loadingMessage")} title={t("admin.loadingTitle")} />
           ) : null}
 
           {bookingsError ? (
-            <StatusBlock
-              tone="error"
-              title="Failed to load bookings"
+            <InlineMessage
               message={bookingsError.message}
+              title={t("admin.bookingsErrorTitle")}
+              tone="error"
             />
           ) : null}
 
           {eventTypesError ? (
-            <StatusBlock
+            <InlineMessage
+              message={t("admin.eventTypesErrorMessage", { message: eventTypesError.message })}
+              title={t("admin.eventTypesErrorTitle")}
               tone="warning"
-              title="Could not resolve event type titles"
-              message={`${eventTypesError.message} Falling back to raw event type IDs.`}
             />
           ) : null}
 
@@ -186,20 +178,23 @@ export function AdminPage() {
                       <p>{booking.guestEmail}</p>
                     </div>
                     <div>
-                      <strong>{formatDateTime(booking.startTime)}</strong>
-                      <p>Event type: {eventTypeTitles.get(booking.eventTypeId) ?? booking.eventTypeId}</p>
+                      <strong>{formatDateTime(booking.startTime, i18n.language)}</strong>
+                      <p>
+                        {t("admin.eventTypeLabel")}:{" "}
+                        {eventTypeTitles.get(booking.eventTypeId) ?? booking.eventTypeId}
+                      </p>
                     </div>
                   </article>
                 ))
               ) : (
-                <StatusBlock
-                  title="No future bookings"
-                  message="The owner endpoint returned an empty list."
+                <InlineMessage
+                  message={t("admin.noBookingsMessage")}
+                  title={t("admin.noBookingsTitle")}
                 />
               )}
             </div>
           ) : null}
-        </section>
+        </Card>
       </div>
     </section>
   );

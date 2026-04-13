@@ -10,7 +10,7 @@ export function StatusBlock({
   tone = "neutral",
 }: StatusBlockProps) {
   return (
-    <section className={`status-block ${tone}`}>
+    <section className={`inline-message tone-${tone} status-block`}>
       <h3>{title}</h3>
       <p>{message}</p>
     </section>

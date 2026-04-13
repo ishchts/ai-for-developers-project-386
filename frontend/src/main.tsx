@@ -1,11 +1,19 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
+import { AppProviders } from "./app/providers/AppProviders";
 import { router } from "./router";
-import "./styles.css";
+import "./i18n";
+import "./styles/tokens.css";
+import "./styles/themes.css";
+import "./styles/base.css";
+import "./styles/components.css";
+import "./styles/booking.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <AppProviders>
+      <RouterProvider router={router} />
+    </AppProviders>
   </React.StrictMode>,
 );

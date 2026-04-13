@@ -1,0 +1,112 @@
+.card,
+.inline-message {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-sm);
+}
+
+.card {
+  padding: var(--space-6);
+}
+
+.card-elevated {
+  box-shadow: var(--shadow-md);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 2.875rem;
+  padding: 0.875rem 1.125rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  transition:
+    transform var(--transition-base),
+    background var(--transition-base),
+    color var(--transition-base),
+    opacity var(--transition-base);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  opacity: 0.68;
+  cursor: wait;
+}
+
+.button-secondary {
+  background: var(--color-secondary);
+  color: var(--color-secondary-contrast);
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.button-full {
+  width: 100%;
+}
+
+.inline-message {
+  padding: var(--space-4) var(--space-5);
+}
+
+.tone-neutral {
+  background: var(--color-info-bg);
+  border-color: var(--color-info-border);
+}
+
+.tone-success {
+  background: var(--color-success-bg);
+  border-color: var(--color-success-border);
+}
+
+.tone-warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+}
+
+.tone-error {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-border);
+}
+
+.skeleton {
+  border-radius: var(--radius-md);
+  min-height: 6rem;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.18) 25%,
+      rgba(255, 255, 255, 0.34) 50%,
+      rgba(255, 255, 255, 0.18) 75%
+    ),
+    var(--color-secondary);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.4s infinite linear;
+}
+
+.status-block {
+  border-radius: var(--radius-lg);
+}
+
+@keyframes skeleton-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}

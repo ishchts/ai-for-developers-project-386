@@ -1,5 +1,5 @@
-export function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat("en", {
+export function formatDateTime(value: string, locale = "ru"): string {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
