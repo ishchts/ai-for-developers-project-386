@@ -11,6 +11,15 @@
 
 Главный принцип: сначала меняются токены, затем компоненты. Не наоборот.
 
+Текущее визуальное направление для `light` theme:
+
+- warm
+- calm
+- human
+- approachable
+
+Приоритет у cream surfaces, мягких границ и тёплого контраста, а не у холодного SaaS-blue.
+
 ## Source Of Truth
 
 Текущее source of truth для дизайн-токенов и базовых UI-паттернов:
@@ -40,27 +49,27 @@
 
 | Token | Light | Dark | Назначение |
 | --- | --- | --- | --- |
-| `--color-bg` | `#f5f1e8` | `#0f1724` | Базовый фон приложения |
-| `--color-bg-accent` | `#e4eef7` | `#1d2a3a` | Дополнительный фон/градиентная подложка |
-| `--color-surface` | `rgba(255, 255, 255, 0.84)` | `rgba(17, 24, 39, 0.88)` | Основной фон карточек и поверхностей |
-| `--color-surface-strong` | `#ffffff` | `#111827` | Плотная поверхность без прозрачности |
-| `--color-border` | `rgba(17, 24, 39, 0.1)` | `rgba(255, 255, 255, 0.12)` | Стандартные границы |
-| `--color-border-strong` | `rgba(17, 24, 39, 0.18)` | `rgba(255, 255, 255, 0.22)` | Усиленные границы и focus state |
+| `--color-bg` | `#f6ecdf` | `#0f1724` | Базовый фон приложения |
+| `--color-bg-accent` | `#efdac4` | `#1d2a3a` | Дополнительный тёплый фон/градиентная подложка |
+| `--color-surface` | `rgba(255, 249, 243, 0.86)` | `rgba(17, 24, 39, 0.88)` | Основной фон карточек и поверхностей |
+| `--color-surface-strong` | `#fffaf3` | `#111827` | Плотная поверхность без прозрачности |
+| `--color-border` | `rgba(92, 70, 48, 0.12)` | `rgba(255, 255, 255, 0.12)` | Стандартные границы |
+| `--color-border-strong` | `rgba(92, 70, 48, 0.22)` | `rgba(255, 255, 255, 0.22)` | Усиленные границы и focus state |
 | `--color-text` | `#132238` | `#f4f7fb` | Основной текст |
-| `--color-text-muted` | `rgba(19, 34, 56, 0.68)` | `rgba(244, 247, 251, 0.72)` | Вторичный текст, descriptions, meta |
-| `--color-primary` | `#16324f` | `#d7e9ff` | Основной CTA и активные состояния |
-| `--color-primary-contrast` | `#f8fbff` | `#102033` | Текст/иконки на primary фоне |
-| `--color-secondary` | `rgba(19, 34, 56, 0.08)` | `rgba(255, 255, 255, 0.08)` | Вторичные поверхности и subdued actions |
-| `--color-secondary-contrast` | `#132238` | `#f4f7fb` | Текст на secondary фоне |
+| `--color-text-muted` | `rgba(64, 47, 34, 0.72)` | `rgba(244, 247, 251, 0.72)` | Вторичный текст, descriptions, meta |
+| `--color-primary` | `#5b3a29` | `#d7e9ff` | Основной CTA и активные состояния |
+| `--color-primary-contrast` | `#fff8f1` | `#102033` | Текст/иконки на primary фоне |
+| `--color-secondary` | `rgba(124, 90, 60, 0.1)` | `rgba(255, 255, 255, 0.08)` | Вторичные поверхности и subdued actions |
+| `--color-secondary-contrast` | `#4a3126` | `#f4f7fb` | Текст на secondary фоне |
 | `--color-success-bg` | `rgba(236, 253, 243, 0.92)` | `rgba(11, 57, 37, 0.9)` | Success background |
 | `--color-success-border` | `rgba(48, 138, 88, 0.22)` | `rgba(91, 194, 129, 0.3)` | Success border |
-| `--color-warning-bg` | `rgba(255, 247, 228, 0.94)` | `rgba(78, 52, 12, 0.9)` | Warning background |
-| `--color-warning-border` | `rgba(190, 124, 16, 0.24)` | `rgba(255, 200, 87, 0.24)` | Warning border |
+| `--color-warning-bg` | `rgba(255, 245, 226, 0.94)` | `rgba(78, 52, 12, 0.9)` | Warning background |
+| `--color-warning-border` | `rgba(172, 116, 36, 0.26)` | `rgba(255, 200, 87, 0.24)` | Warning border |
 | `--color-error-bg` | `rgba(255, 240, 240, 0.94)` | `rgba(84, 22, 22, 0.9)` | Error background |
 | `--color-error-border` | `rgba(172, 44, 44, 0.2)` | `rgba(255, 128, 128, 0.24)` | Error border |
-| `--color-info-bg` | `rgba(250, 251, 255, 0.92)` | `rgba(20, 28, 41, 0.92)` | Neutral informational surface |
-| `--color-info-border` | `rgba(17, 24, 39, 0.08)` | `rgba(255, 255, 255, 0.08)` | Neutral informational border |
-| `--color-input-bg` | `rgba(255, 255, 255, 0.96)` | `rgba(15, 23, 36, 0.94)` | Поля ввода и form controls |
+| `--color-info-bg` | `rgba(255, 249, 242, 0.94)` | `rgba(20, 28, 41, 0.92)` | Neutral informational surface |
+| `--color-info-border` | `rgba(92, 70, 48, 0.1)` | `rgba(255, 255, 255, 0.08)` | Neutral informational border |
+| `--color-input-bg` | `rgba(255, 252, 247, 0.98)` | `rgba(15, 23, 36, 0.94)` | Поля ввода и form controls |
 
 #### Роли цветовых токенов
 
@@ -240,7 +249,7 @@
 
 Текущая модель тем:
 
-- `data-theme="light"` — рабочая тема по умолчанию
+- `data-theme="light"` — рабочая тема по умолчанию, с тёплой cream/sand палитрой
 - `data-theme="dark"` — подготовленная структура токенов для тёмной темы
 
 Правила:
@@ -282,5 +291,7 @@
 - часть `rgba(...)` в gradient backgrounds;
 - локальные значения для focus ring / skeleton shimmer;
 - отдельные размеры в feature-level layout (`minmax`, фиксированные ширины, `1.5rem` badge size).
+
+После смещения light theme в более тёплую сторону эти raw values всё ещё допустимы как локальные visual treatments, но если warm gradients или accent glows начнут повторяться в нескольких местах, их нужно будет вынести в отдельные semantic tokens.
 
 Это допустимо как временный технический долг, пока значение не стало системным. Если такие значения начинают повторяться или влиять на общую визуальную консистентность, их нужно переносить в токены.

@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "../backend/app";
+import { createStore, defaultEventTypes, ensureDefaultEventTypes } from "../backend/store";
 import type { CreateEventTypeRequest } from "../backend/types";
 
 test("GET /healthz returns 200", async (t) => {
@@ -103,6 +104,7 @@ test("GET /api/event-types returns created event types", async (t) => {
 
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), [
+    ...defaultEventTypes,
     {
       id: "event-1",
       title: "Consultation",
@@ -110,6 +112,69 @@ test("GET /api/event-types returns created event types", async (t) => {
       durationMinutes: 60,
     },
   ]);
+});
+
+test("GET /api/event-types returns seeded default event types on empty startup", async (t) => {
+  const app = buildApp({
+    staticRoot: null,
+  });
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  const response = await app.inject({
+    method: "GET",
+    url: "/api/event-types",
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.json(), defaultEventTypes);
+});
+
+test("createStore seeds defaults only once for the same store", () => {
+  const store = createStore();
+
+  assert.equal(store.eventTypes.length, 3);
+
+  ensureDefaultEventTypes(store);
+
+  assert.equal(store.eventTypes.length, 3);
+  assert.deepEqual(store.eventTypes, defaultEventTypes);
+});
+
+test("seed does not modify a non-empty store", async (t) => {
+  const store = {
+    eventTypes: [
+      {
+        id: "custom-event",
+        title: "Кастомная встреча",
+        description: "Только пользовательские данные.",
+        durationMinutes: 60,
+      },
+    ],
+    bookings: [],
+  };
+
+  ensureDefaultEventTypes(store);
+
+  const app = buildApp({
+    store,
+    staticRoot: null,
+  });
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  const response = await app.inject({
+    method: "GET",
+    url: "/api/event-types",
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.json(), store.eventTypes);
+  assert.equal(response.json().length, 1);
 });
 
 test("GET /api/event-types/:eventTypeId/slots returns 404 for unknown event type", async (t) => {

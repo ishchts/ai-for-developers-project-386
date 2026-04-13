@@ -2,7 +2,9 @@
   padding: var(--space-8);
   border: 1px solid var(--color-border);
   border-radius: calc(var(--radius-lg) + 0.5rem);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.7));
+  background:
+    radial-gradient(circle at top right, rgba(245, 211, 176, 0.28), transparent 34%),
+    linear-gradient(160deg, rgba(255, 252, 246, 0.94), rgba(255, 245, 235, 0.76));
   box-shadow: var(--shadow-md);
 }
 
