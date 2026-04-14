@@ -1,20 +1,27 @@
 import { API_BASE_URL } from "./config";
 import type {
   Booking,
+  BookingStatus,
   CreateBookingRequest,
   CreateEventTypeRequest,
   EventType,
+  PaginatedBookings,
   Slot,
   ApiErrorPayload,
+  UpdateBookingRequest,
+  UpdateEventTypeRequest,
 } from "../types/api";
 import { ApiError } from "../types/api";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers ?? {});
+
+  if (init?.body !== undefined && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
+    headers,
     ...init,
   });
 
@@ -30,7 +37,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(response.status, payload);
   }
 
-  return (await response.json()) as T;
+  const text = await response.text();
+
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
 }
 
 export const api = {
@@ -56,10 +69,46 @@ export const api = {
     return request<Booking[]>("/owner/bookings");
   },
 
+  searchBookings(status: BookingStatus, page: number, pageSize: number): Promise<PaginatedBookings> {
+    const params = new URLSearchParams({
+      status,
+      page: String(page),
+      pageSize: String(pageSize),
+    });
+
+    return request<PaginatedBookings>(`/owner/bookings/search?${params.toString()}`);
+  },
+
+  updateBooking(bookingId: string, payload: UpdateBookingRequest): Promise<Booking> {
+    return request<Booking>(`/owner/bookings/${encodeURIComponent(bookingId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  deleteBooking(bookingId: string): Promise<Booking> {
+    return request<Booking>(`/owner/bookings/${encodeURIComponent(bookingId)}`, {
+      method: "DELETE",
+    });
+  },
+
   createEventType(payload: CreateEventTypeRequest): Promise<EventType> {
     return request<EventType>("/owner/event-types", {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  },
+
+  updateEventType(eventTypeId: string, payload: UpdateEventTypeRequest): Promise<EventType> {
+    return request<EventType>(`/owner/event-types/${encodeURIComponent(eventTypeId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  deleteEventType(eventTypeId: string): Promise<EventType> {
+    return request<EventType>(`/owner/event-types/${encodeURIComponent(eventTypeId)}`, {
+      method: "DELETE",
     });
   },
 };

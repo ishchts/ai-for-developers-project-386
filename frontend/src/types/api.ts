@@ -33,6 +33,23 @@ export type CreateEventTypeRequest = {
   durationMinutes: number;
 };
 
+export type UpdateEventTypeRequest = Partial<CreateEventTypeRequest>;
+
+export type UpdateBookingRequest = Partial<CreateBookingRequest> & {
+  guestName?: string;
+  guestEmail?: string;
+};
+
+export type BookingStatus = "upcoming" | "past";
+
+export type PaginatedBookings = {
+  items: Booking[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+};
+
 export type ApiErrorCode = "BAD_REQUEST" | "NOT_FOUND" | "TIME_SLOT_CONFLICT";
 
 export type ApiErrorPayload = {

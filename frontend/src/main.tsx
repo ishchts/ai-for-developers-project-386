@@ -4,11 +4,7 @@ import { RouterProvider } from "react-router-dom";
 import { AppProviders } from "./app/providers/AppProviders";
 import { router } from "./router";
 import "./i18n";
-import "./styles/tokens.css";
-import "./styles/themes.css";
-import "./styles/base.css";
-import "./styles/components.css";
-import "./styles/booking.css";
+import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

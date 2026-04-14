@@ -18,6 +18,8 @@ export type CreateEventTypeRequest = {
   durationMinutes: number;
 };
 
+export type UpdateEventTypeRequest = Partial<CreateEventTypeRequest>;
+
 export type Booking = {
   id: string;
   eventTypeId: string;
@@ -34,6 +36,11 @@ export type CreateBookingRequest = {
   startTime: string;
 };
 
+export type UpdateBookingRequest = Partial<CreateBookingRequest> & {
+  guestName?: string;
+  guestEmail?: string;
+};
+
 export type Slot = {
   startTime: string;
   endTime: string;
@@ -43,6 +50,16 @@ export type Slot = {
 export type Store = {
   eventTypes: EventType[];
   bookings: Booking[];
+};
+
+export type BookingListStatus = "upcoming" | "past";
+
+export type PaginatedBookings = {
+  items: Booking[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
 };
 
 export type BuildAppOptions = {

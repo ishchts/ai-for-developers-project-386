@@ -2,6 +2,7 @@ import type { Slot } from "./types";
 
 export const SLOT_WINDOW_START_MINUTES = 9 * 60;
 export const SLOT_WINDOW_END_MINUTES = 18 * 60;
+export const SLOT_STEP_MINUTES = 5;
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -58,7 +59,7 @@ export function generateSlots(dateInput: string, durationMinutes: number): Slot[
   for (
     let startMinutes = SLOT_WINDOW_START_MINUTES;
     startMinutes + durationMinutes <= SLOT_WINDOW_END_MINUTES;
-    startMinutes += durationMinutes
+    startMinutes += SLOT_STEP_MINUTES
   ) {
     const start = createSlotDate(dateInput, startMinutes);
     const end = new Date(start.getTime() + durationMinutes * 60 * 1000);

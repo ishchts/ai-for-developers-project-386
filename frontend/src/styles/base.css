@@ -28,11 +28,13 @@ a {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
 
 input,
+select,
 textarea {
   color: var(--color-text);
 }
@@ -142,6 +144,7 @@ textarea {
 }
 
 .field input,
+.field select,
 .field textarea {
   width: 100%;
   padding: 0.875rem 1rem;
@@ -151,10 +154,17 @@ textarea {
 }
 
 .field input:focus,
+.field select:focus,
 .field textarea:focus {
   outline: 2px solid transparent;
   border-color: var(--color-border-strong);
   box-shadow: 0 0 0 3px rgba(91, 58, 41, 0.14);
+}
+
+.field-error {
+  margin: 0;
+  color: #9f3f2d;
+  font-size: var(--font-size-sm);
 }
 
 @media (max-width: 720px) {

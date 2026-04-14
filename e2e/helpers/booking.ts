@@ -13,6 +13,11 @@ type BookingFormData = {
   guestEmail: string;
 };
 
+type BookingSeed = BookingFormData & {
+  eventTypeId: string;
+  startTime: string;
+};
+
 type CreatedEventType = {
   id: string;
   title: string;
@@ -47,6 +52,17 @@ export async function createEventType(
   expect(response.ok()).toBeTruthy();
 
   return (await response.json()) as CreatedEventType;
+}
+
+export async function createBooking(
+  request: APIRequestContext,
+  data: BookingSeed,
+): Promise<void> {
+  const response = await request.post(`${backendBaseUrl}/api/bookings`, {
+    data,
+  });
+
+  expect(response.ok()).toBeTruthy();
 }
 
 export async function openBookingPage(

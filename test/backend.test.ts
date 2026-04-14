@@ -264,13 +264,13 @@ test("GET /api/event-types/:eventTypeId/slots returns deterministic slots and av
       available: false,
     },
     {
-      startTime: "2026-04-10T10:00:00.000Z",
-      endTime: "2026-04-10T11:00:00.000Z",
+      startTime: "2026-04-10T09:05:00.000Z",
+      endTime: "2026-04-10T10:05:00.000Z",
       available: true,
     },
     {
-      startTime: "2026-04-10T11:00:00.000Z",
-      endTime: "2026-04-10T12:00:00.000Z",
+      startTime: "2026-04-10T09:10:00.000Z",
+      endTime: "2026-04-10T10:10:00.000Z",
       available: true,
     },
   ]);
@@ -466,6 +466,290 @@ test("GET /api/owner/bookings returns only future bookings sorted by start time"
     response.json().map((booking: { endTime: string }) => booking.endTime),
     ["2026-04-10T12:00:00.000Z", "2026-04-10T13:00:00.000Z"],
   );
+});
+
+test("GET /api/owner/bookings/search paginates upcoming bookings", async (t) => {
+  let idCounter = 0;
+  const app = buildApp({
+    createId: () => `id-${++idCounter}`,
+    getNow: () => new Date("2026-04-10T10:30:00.000Z"),
+    staticRoot: null,
+  });
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  await createEventType(app, {
+    title: "Consultation",
+    description: "Detailed session",
+    durationMinutes: 30,
+  });
+
+  for (const [index, startTime] of [
+    "2026-04-10T11:00:00.000Z",
+    "2026-04-10T11:05:00.000Z",
+    "2026-04-10T11:10:00.000Z",
+  ].entries()) {
+    await app.inject({
+      method: "POST",
+      url: "/api/bookings",
+      payload: {
+        eventTypeId: "id-1",
+        guestName: startTime,
+        guestEmail: `upcoming-${index}@example.com`,
+        startTime,
+      },
+    });
+  }
+
+  const response = await app.inject({
+    method: "GET",
+    url: "/api/owner/bookings/search?status=upcoming&page=2&pageSize=2",
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.json().page, 2);
+  assert.deepEqual(response.json().pageSize, 2);
+  assert.deepEqual(response.json().totalItems, 3);
+  assert.deepEqual(response.json().totalPages, 2);
+  assert.deepEqual(response.json().items.map((booking: { guestName: string }) => booking.guestName), [
+    "2026-04-10T11:10:00.000Z",
+  ]);
+});
+
+test("GET /api/owner/bookings/search returns past bookings sorted descending", async (t) => {
+  let idCounter = 0;
+  const app = buildApp({
+    createId: () => `id-${++idCounter}`,
+    getNow: () => new Date("2026-04-10T12:00:00.000Z"),
+    staticRoot: null,
+  });
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  await createEventType(app, {
+    title: "Consultation",
+    description: "Detailed session",
+    durationMinutes: 30,
+  });
+
+  for (const [index, startTime] of [
+    "2026-04-10T09:00:00.000Z",
+    "2026-04-10T10:00:00.000Z",
+  ].entries()) {
+    await app.inject({
+      method: "POST",
+      url: "/api/bookings",
+      payload: {
+        eventTypeId: "id-1",
+        guestName: startTime,
+        guestEmail: `past-${index}@example.com`,
+        startTime,
+      },
+    });
+  }
+
+  const response = await app.inject({
+    method: "GET",
+    url: "/api/owner/bookings/search?status=past&page=1&pageSize=10",
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.json().items.map((booking: { guestName: string }) => booking.guestName), [
+    "2026-04-10T10:00:00.000Z",
+    "2026-04-10T09:00:00.000Z",
+  ]);
+});
+
+test("DELETE /api/owner/bookings/:bookingId deletes a booking", async (t) => {
+  let idCounter = 0;
+  const app = buildApp({
+    createId: () => `id-${++idCounter}`,
+    staticRoot: null,
+  });
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  await createEventType(app, {
+    title: "Consultation",
+    description: "Detailed session",
+    durationMinutes: 30,
+  });
+
+  await app.inject({
+    method: "POST",
+    url: "/api/bookings",
+    payload: {
+      eventTypeId: "id-1",
+      guestName: "Ada",
+      guestEmail: "ada@example.com",
+      startTime: "2026-04-10T11:00:00.000Z",
+    },
+  });
+
+  const response = await app.inject({
+    method: "DELETE",
+    url: "/api/owner/bookings/id-2",
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.json().id, "id-2");
+
+  const listResponse = await app.inject({
+    method: "GET",
+    url: "/api/owner/bookings/search?status=upcoming&page=1&pageSize=10",
+  });
+
+  assert.equal(listResponse.json().items.length, 0);
+});
+
+test("PATCH /api/owner/bookings/:bookingId updates booking fields and time", async (t) => {
+  let idCounter = 0;
+  const app = buildApp({
+    createId: () => `id-${++idCounter}`,
+    staticRoot: null,
+  });
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  await createEventType(app, {
+    title: "Consultation",
+    description: "Detailed session",
+    durationMinutes: 30,
+  });
+
+  await app.inject({
+    method: "POST",
+    url: "/api/bookings",
+    payload: {
+      eventTypeId: "id-1",
+      guestName: "Ada",
+      guestEmail: "ada@example.com",
+      startTime: "2026-04-10T11:00:00.000Z",
+    },
+  });
+
+  const response = await app.inject({
+    method: "PATCH",
+    url: "/api/owner/bookings/id-2",
+    payload: {
+      guestName: "Ada Lovelace",
+      guestEmail: "adalovelace@example.com",
+      startTime: "2026-04-10T11:05:00.000Z",
+    },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.json().guestName, "Ada Lovelace");
+  assert.equal(response.json().guestEmail, "adalovelace@example.com");
+  assert.equal(response.json().startTime, "2026-04-10T11:05:00.000Z");
+  assert.equal(response.json().endTime, "2026-04-10T11:35:00.000Z");
+});
+
+test("PATCH /api/owner/event-types/:eventTypeId updates an event type", async (t) => {
+  const app = buildApp({
+    createId: () => "event-1",
+    staticRoot: null,
+  });
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  await createEventType(app, {
+    title: "Consultation",
+    description: "Detailed session",
+    durationMinutes: 30,
+  });
+
+  const response = await app.inject({
+    method: "PATCH",
+    url: "/api/owner/event-types/event-1",
+    payload: {
+      title: "Updated consultation",
+      durationMinutes: 45,
+    },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.json(), {
+    id: "event-1",
+    title: "Updated consultation",
+    description: "Detailed session",
+    durationMinutes: 45,
+  });
+});
+
+test("DELETE /api/owner/event-types/:eventTypeId blocks deletion when bookings exist", async (t) => {
+  let idCounter = 0;
+  const app = buildApp({
+    createId: () => `id-${++idCounter}`,
+    staticRoot: null,
+  });
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  await createEventType(app, {
+    title: "Consultation",
+    description: "Detailed session",
+    durationMinutes: 30,
+  });
+
+  await app.inject({
+    method: "POST",
+    url: "/api/bookings",
+    payload: {
+      eventTypeId: "id-1",
+      guestName: "Ada",
+      guestEmail: "ada@example.com",
+      startTime: "2026-04-10T11:00:00.000Z",
+    },
+  });
+
+  const response = await app.inject({
+    method: "DELETE",
+    url: "/api/owner/event-types/id-1",
+  });
+
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(response.json(), {
+    code: "BAD_REQUEST",
+    message: "Cannot delete an event type with existing bookings.",
+  });
+});
+
+test("DELETE /api/owner/event-types/:eventTypeId deletes an unused event type", async (t) => {
+  const app = buildApp({
+    createId: () => "event-1",
+    staticRoot: null,
+  });
+
+  t.after(async () => {
+    await app.close();
+  });
+
+  await createEventType(app, {
+    title: "Consultation",
+    description: "Detailed session",
+    durationMinutes: 30,
+  });
+
+  const response = await app.inject({
+    method: "DELETE",
+    url: "/api/owner/event-types/event-1",
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.json().id, "event-1");
 });
 
 test("GET /api/does-not-exist returns JSON 404 instead of SPA HTML", async (t) => {

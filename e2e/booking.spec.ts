@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  createBooking,
   createEventType,
   dateFromToday,
   fillBookingForm,
@@ -32,7 +33,7 @@ test("happy path creates a booking and shows it in admin", async ({ page, reques
   await expect(page.getByTestId("booking-success-card")).toBeVisible();
 
   await page.goto("/admin");
-  await expect(page.getByRole("heading", { name: "Будущие бронирования", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Предстоящие бронирования", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Обновить" }).click();
 
   const bookingRow = page.locator(".booking-row").filter({ hasText: guestEmail });
@@ -83,4 +84,61 @@ test("conflict path shows slot conflict for a stale second page", async ({
 
   await firstContext.close();
   await secondContext.close();
+});
+
+test("admin can delete a booking from the upcoming list", async ({ page, request }) => {
+  const eventType = await createEventType(request, {
+    title: `Delete Session ${Date.now()}`,
+  });
+  const guestEmail = `delete.${Date.now()}@example.com`;
+
+  await createBooking(request, {
+    eventTypeId: eventType.id,
+    guestName: "Delete Me",
+    guestEmail,
+    startTime: `${dateFromToday(1)}T11:00:00.000Z`,
+  });
+
+  await page.goto("/admin");
+  const bookingRow = page.locator(".booking-row").filter({ hasText: guestEmail });
+  await expect(bookingRow).toBeVisible();
+  await bookingRow.getByRole("button", { name: "Удалить" }).click();
+  await expect(bookingRow.getByText("Удалить это бронирование?")).toBeVisible();
+  await bookingRow.locator(".admin-delete-confirm").getByRole("button", { name: "Удалить" }).click();
+  await expect(bookingRow).toHaveCount(0);
+});
+
+test("admin can create, edit, and delete an event type", async ({ page }) => {
+  const title = `Admin Event ${Date.now()}`;
+  const updatedTitle = `${title} Updated`;
+
+  await page.goto("/admin?section=event-types");
+  await page.getByRole("button", { name: "Создать тип события" }).click();
+
+  const eventTypeDialog = page.getByTestId("event-type-dialog");
+  await expect(eventTypeDialog).toBeVisible();
+  await eventTypeDialog.getByLabel("Название").fill(title);
+  await eventTypeDialog.getByLabel("Описание").fill("Тип встречи для проверки CRUD.");
+  await eventTypeDialog.getByLabel("Длительность (минуты)").fill("25");
+  await eventTypeDialog.getByRole("button", { name: "Создать" }).click();
+  await expect(page.getByText("Тип встречи создан")).toBeVisible();
+
+  let eventTypeRow = page.locator(".booking-row").filter({ hasText: title });
+  await expect(eventTypeRow).toBeVisible();
+
+  await eventTypeRow.getByRole("button", { name: "Редактировать" }).click();
+  await expect(eventTypeDialog).toBeVisible();
+  await eventTypeDialog.getByLabel("Название").fill(updatedTitle);
+  await eventTypeDialog.getByLabel("Длительность (минуты)").fill("35");
+  await eventTypeDialog.getByRole("button", { name: "Сохранить" }).click();
+  await expect(page.getByText("Изменения сохранены")).toBeVisible();
+
+  eventTypeRow = page.locator(".booking-row").filter({ hasText: updatedTitle });
+  await expect(eventTypeRow).toBeVisible();
+
+  await eventTypeRow.getByRole("button", { name: "Удалить" }).click();
+  const deleteDialog = page.getByTestId("event-type-delete-dialog");
+  await expect(deleteDialog).toBeVisible();
+  await deleteDialog.getByRole("button", { name: "Удалить" }).click();
+  await expect(eventTypeRow).toHaveCount(0);
 });

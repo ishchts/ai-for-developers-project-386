@@ -28,6 +28,16 @@ model CreateEventTypeRequest {
   durationMinutes: int32;
 }
 
+model UpdateEventTypeRequest {
+  @minLength(1)
+  title?: string;
+
+  description?: string;
+
+  @minValue(1)
+  durationMinutes?: int32;
+}
+
 // ============ Booking ============
 model Booking {
   @key
@@ -56,6 +66,26 @@ model CreateBookingRequest {
   guestEmail: string;
 
   startTime: utcDateTime;
+}
+
+model UpdateBookingRequest {
+  eventTypeId?: string;
+
+  @minLength(1)
+  guestName?: string;
+
+  @format("email")
+  guestEmail?: string;
+
+  startTime?: utcDateTime;
+}
+
+model PaginatedBookings {
+  items: Booking[];
+  page: int32;
+  pageSize: int32;
+  totalItems: int32;
+  totalPages: int32;
 }
 
 // ============ Slot (вычисляемый) ============
