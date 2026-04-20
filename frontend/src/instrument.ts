@@ -24,6 +24,7 @@ Sentry.init({
   enabled: Boolean(sentryDsn),
   environment: sentryEnvironment,
   release: sentryRelease,
+  sendDefaultPii: true,
   integrations: [
     Sentry.reactRouterV7BrowserTracingIntegration({
       useEffect: React.useEffect,

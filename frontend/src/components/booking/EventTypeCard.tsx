@@ -6,9 +6,10 @@ import { bookingTestIds } from "../../features/booking/booking-selectors";
 
 type EventTypeCardProps = {
   eventType: EventType;
+  link?: React.ReactElement
 };
 
-export function EventTypeCard({ eventType }: EventTypeCardProps) {
+export function EventTypeCard({ eventType, link }: EventTypeCardProps) {
   const { t } = useTranslation();
 
   return (
@@ -18,13 +19,16 @@ export function EventTypeCard({ eventType }: EventTypeCardProps) {
         <h2>{eventType.title}</h2>
         <p>{eventType.description}</p>
       </div>
-      <Link
-        className="button"
-        data-testid={bookingTestIds.eventCardCta}
-        to={`/book/${eventType.id}`}
-      >
-        {t("guest.cta")}
-      </Link>
+      {!link && (
+        <Link
+          className="button"
+          data-testid={bookingTestIds.eventCardCta}
+          to={`/book/${eventType.id}`}
+        >
+          {t("guest.cta")}
+        </Link>
+      )}
+      {link && link}
     </Card>
   );
 }

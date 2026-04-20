@@ -6,3 +6,7 @@ playwright-report
 test-results
 .DS_Store
 dist/
+frontend/.env.local
+frontend/.env.production
+frontend/.env.production.local
+frontend/.env.*.local
