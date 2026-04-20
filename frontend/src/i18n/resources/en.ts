@@ -164,6 +164,10 @@ export const en = {
     states: {
       genericError: "Something went wrong. Please try again.",
       unknownError: "Unknown error",
+      appCrashTitle: "The application hit an unexpected error",
+      appCrashMessage: "Reload the page to start a fresh session.",
+      routeErrorTitle: "This page could not be loaded",
+      routeErrorMessage: "Try refreshing the page and repeating the last action.",
     },
   },
 } as const;
