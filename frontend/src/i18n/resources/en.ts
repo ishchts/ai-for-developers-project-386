@@ -138,8 +138,11 @@ export const en = {
       createEventTypeHint: "Add a new meeting type for the public booking flow.",
       createEventTypeDialogHint: "Fill in the title, description, and duration to add a new meeting format.",
       editEventTypeDialogHint: "Update the title, description, or duration to change this meeting format in the booking flow.",
+      editBookingTitle: "Edit booking",
+      editBookingDialogHint: "Update guest details, meeting type, or booking time.",
       editBookingHint: "Update guest details, meeting type, or booking time.",
       deleteConfirmBooking: "Delete this booking?",
+      deleteBookingDescription: "The booking for guest {{guestName}} will be deleted. This action cannot be quickly undone.",
       deleteConfirmEventType: "Delete this event type?",
       deleteEventTypeDescription:
         "The event type “{{title}}” will be removed from the admin area and the public meeting list. This action cannot be quickly undone.",

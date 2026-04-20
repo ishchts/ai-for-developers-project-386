@@ -140,8 +140,11 @@ export const ru = {
       createEventTypeHint: "Добавьте новый тип встречи для публичного flow.",
       createEventTypeDialogHint: "Заполните название, описание и длительность, чтобы добавить новый формат встречи.",
       editEventTypeDialogHint: "Обновите название, описание или длительность, чтобы изменения сразу появились в booking flow.",
+      editBookingTitle: "Редактировать бронирование",
+      editBookingDialogHint: "Измените данные гостя, тип встречи или время записи.",
       editBookingHint: "Измените данные гостя, тип встречи или время записи.",
       deleteConfirmBooking: "Удалить это бронирование?",
+      deleteBookingDescription: "Бронирование гостя {{guestName}} будет удалено. Это действие нельзя быстро отменить.",
       deleteConfirmEventType: "Удалить этот тип события?",
       deleteEventTypeDescription:
         "Тип события «{{title}}» исчезнет из админки и публичного списка встреч. Это действие нельзя быстро отменить.",
