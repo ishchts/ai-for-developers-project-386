@@ -2,6 +2,8 @@ import { FormEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { BookingDeleteDialog } from "../components/admin/BookingDeleteDialog";
+import { BookingDialog } from "../components/admin/BookingDialog";
 import { EventTypeDeleteDialog } from "../components/admin/EventTypeDeleteDialog";
 import { EventTypeDialog } from "../components/admin/EventTypeDialog";
 import { Button } from "../components/common/Button";
@@ -41,6 +43,7 @@ type EventTypeFormState = {
 };
 
 type BookingFormState = {
+  visible: boolean;
   bookingId: string | null;
   guestName: string;
   guestEmail: string;
@@ -63,6 +66,7 @@ const hiddenEventTypeForm: EventTypeFormState = {
 };
 
 const hiddenBookingForm: BookingFormState = {
+  visible: false,
   bookingId: null,
   guestName: "",
   guestEmail: "",
@@ -78,7 +82,9 @@ export function AdminPage() {
   const [feedback, setFeedback] = useState<FeedbackState>(null);
   const [eventTypeForm, setEventTypeForm] = useState<EventTypeFormState>(hiddenEventTypeForm);
   const [bookingForm, setBookingForm] = useState<BookingFormState>(hiddenBookingForm);
-  const [pendingDeleteBookingId, setPendingDeleteBookingId] = useState<string | null>(null);
+  const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
+  const [bookingDeleteError, setBookingDeleteError] = useState<string | null>(null);
+  const [isDeletingBooking, setIsDeletingBooking] = useState(false);
   const [eventTypeToDelete, setEventTypeToDelete] = useState<EventType | null>(null);
   const [eventTypeDeleteError, setEventTypeDeleteError] = useState<string | null>(null);
   const [isDeletingEventType, setIsDeletingEventType] = useState(false);
@@ -260,6 +266,7 @@ export function AdminPage() {
 
   function openEditBooking(booking: Booking) {
     setBookingForm({
+      visible: true,
       bookingId: booking.id,
       guestName: booking.guestName,
       guestEmail: booking.guestEmail,
@@ -273,6 +280,17 @@ export function AdminPage() {
 
   function closeBookingEditor() {
     setBookingForm(hiddenBookingForm);
+  }
+
+  function openDeleteBooking(booking: Booking) {
+    setBookingToDelete(booking);
+    setBookingDeleteError(null);
+  }
+
+  function closeDeleteBookingDialog() {
+    setBookingToDelete(null);
+    setBookingDeleteError(null);
+    setIsDeletingBooking(false);
   }
 
   async function handleSubmitEventType(event: FormEvent<HTMLFormElement>) {
@@ -363,7 +381,7 @@ export function AdminPage() {
         startTime: fromDateTimeLocalValue(bookingForm.startTime),
       });
       await reloadBookings();
-      closeBookingEditor();
+      setBookingForm(hiddenBookingForm);
       setFeedback({
         tone: "success",
         title: t("admin.updateSuccessTitle"),
@@ -382,23 +400,26 @@ export function AdminPage() {
     }
   }
 
-  async function handleDeleteBooking(bookingId: string) {
+  async function handleDeleteBooking() {
+    if (!bookingToDelete) {
+      return;
+    }
+
+    setIsDeletingBooking(true);
+    setBookingDeleteError(null);
+
     try {
-      await api.deleteBooking(bookingId);
-      setPendingDeleteBookingId(null);
+      await api.deleteBooking(bookingToDelete.id);
       await reloadBookings();
-      closeBookingEditor();
+      closeDeleteBookingDialog();
       setFeedback({
         tone: "success",
         title: t("admin.deleteSuccessTitle"),
         message: t("admin.deleteSuccessMessage"),
       });
     } catch (error) {
-      setFeedback({
-        tone: "error",
-        title: t("admin.bookingsErrorTitle"),
-        message: mapAdminError(error, "delete"),
-      });
+      setIsDeletingBooking(false);
+      setBookingDeleteError(mapAdminError(error, "delete"));
     }
   }
 
@@ -509,95 +530,6 @@ export function AdminPage() {
               />
             ) : null}
 
-            {bookingForm.bookingId ? (
-              <Card as="form" className="stack" onSubmit={handleSubmitBooking}>
-                <div className="section-head">
-                  <div className="stack compact">
-                    <h3>{t("admin.createBookingTitle")}</h3>
-                    <p>{t("admin.editBookingHint")}</p>
-                  </div>
-                  <Button onClick={closeBookingEditor} type="button" variant="ghost">
-                    {t("admin.cancelCta")}
-                  </Button>
-                </div>
-
-                <label className="field">
-                  <span>{t("admin.guestNameLabel")}</span>
-                  <input
-                    onChange={(event) =>
-                      setBookingForm((current) => ({
-                        ...current,
-                        guestName: event.target.value,
-                      }))
-                    }
-                    type="text"
-                    value={bookingForm.guestName}
-                  />
-                  {bookingForm.errors.guestName ? <p className="field-error">{bookingForm.errors.guestName}</p> : null}
-                </label>
-
-                <label className="field">
-                  <span>{t("admin.guestEmailLabel")}</span>
-                  <input
-                    onChange={(event) =>
-                      setBookingForm((current) => ({
-                        ...current,
-                        guestEmail: event.target.value,
-                      }))
-                    }
-                    type="email"
-                    value={bookingForm.guestEmail}
-                  />
-                  {bookingForm.errors.guestEmail ? <p className="field-error">{bookingForm.errors.guestEmail}</p> : null}
-                </label>
-
-                <label className="field">
-                  <span>{t("admin.eventTypeLabel")}</span>
-                  <select
-                    onChange={(event) =>
-                      setBookingForm((current) => ({
-                        ...current,
-                        eventTypeId: event.target.value,
-                      }))
-                    }
-                    value={bookingForm.eventTypeId}
-                  >
-                    <option value="">{t("admin.validation.eventTypeRequired")}</option>
-                    {(eventTypes ?? []).map((eventType) => (
-                      <option key={eventType.id} value={eventType.id}>
-                        {eventType.title}
-                      </option>
-                    ))}
-                  </select>
-                  {bookingForm.errors.eventTypeId ? <p className="field-error">{bookingForm.errors.eventTypeId}</p> : null}
-                </label>
-
-                <label className="field">
-                  <span>{t("admin.startTimeLabel")}</span>
-                  <input
-                    onChange={(event) =>
-                      setBookingForm((current) => ({
-                        ...current,
-                        startTime: event.target.value,
-                      }))
-                    }
-                    type="datetime-local"
-                    value={bookingForm.startTime}
-                  />
-                  {bookingForm.errors.startTime ? <p className="field-error">{bookingForm.errors.startTime}</p> : null}
-                </label>
-
-                <div className="button-row">
-                  <Button onClick={closeBookingEditor} type="button" variant="ghost">
-                    {t("admin.cancelCta")}
-                  </Button>
-                  <Button disabled={bookingForm.isSubmitting} type="submit">
-                    {bookingForm.isSubmitting ? t("common.saving") : t("admin.saveCta")}
-                  </Button>
-                </div>
-              </Card>
-            ) : null}
-
             {bookingsPage ? (
               <div className="stack compact">
                 {bookingsPage.items.length ? (
@@ -622,23 +554,9 @@ export function AdminPage() {
                           <Button onClick={() => openEditBooking(booking)} variant="secondary">
                             {t("admin.editCta")}
                           </Button>
-                          {pendingDeleteBookingId === booking.id ? (
-                            <div className="admin-delete-confirm">
-                              <span>{t("admin.deleteConfirmBooking")}</span>
-                              <div className="admin-inline-actions">
-                                <Button onClick={() => void handleDeleteBooking(booking.id)} variant="ghost">
-                                  {t("admin.deleteCta")}
-                                </Button>
-                                <Button onClick={() => setPendingDeleteBookingId(null)} variant="secondary">
-                                  {t("admin.cancelCta")}
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <Button onClick={() => setPendingDeleteBookingId(booking.id)} variant="ghost">
-                              {t("admin.deleteCta")}
-                            </Button>
-                          )}
+                          <Button onClick={() => openDeleteBooking(booking)} variant="ghost">
+                            {t("admin.deleteCta")}
+                          </Button>
                         </div>
                       </div>
                     </article>
@@ -684,6 +602,62 @@ export function AdminPage() {
               <p className="meta">{t("admin.totalItems", { count: bookingsPage.totalItems })}</p>
             ) : null}
           </Card>
+
+          <BookingDialog
+            errors={bookingForm.errors}
+            eventTypeId={bookingForm.eventTypeId}
+            eventTypes={eventTypes ?? []}
+            guestEmail={bookingForm.guestEmail}
+            guestName={bookingForm.guestName}
+            isSubmitting={bookingForm.isSubmitting}
+            onEventTypeChange={(value) =>
+              setBookingForm((current) => ({
+                ...current,
+                eventTypeId: value,
+              }))
+            }
+            onGuestEmailChange={(value) =>
+              setBookingForm((current) => ({
+                ...current,
+                guestEmail: value,
+              }))
+            }
+            onGuestNameChange={(value) =>
+              setBookingForm((current) => ({
+                ...current,
+                guestName: value,
+              }))
+            }
+            onOpenChange={(open) => {
+              if (!open) {
+                closeBookingEditor();
+              }
+            }}
+            onStartTimeChange={(value) =>
+              setBookingForm((current) => ({
+                ...current,
+                startTime: value,
+              }))
+            }
+            onSubmit={handleSubmitBooking}
+            open={bookingForm.visible}
+            startTime={bookingForm.startTime}
+          />
+
+          <BookingDeleteDialog
+            guestName={bookingToDelete?.guestName ?? ""}
+            isDeleting={isDeletingBooking}
+            onConfirm={() => {
+              void handleDeleteBooking();
+            }}
+            onOpenChange={(open) => {
+              if (!open) {
+                closeDeleteBookingDialog();
+              }
+            }}
+            open={Boolean(bookingToDelete)}
+            submitError={bookingDeleteError}
+          />
         </div>
       ) : (
         <div className="stack">
